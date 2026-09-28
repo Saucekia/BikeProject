@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<title>SafeHouse</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" type="image/png" href="icons/favicon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="SafeHouse" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#34966d" />
+<link rel="preconnect" href="https://maps.googleapis.com" />
+<link rel="preconnect" href="https://cdn.jsdelivr.net" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- Animated splash (your logo, as vector so it can move) -->
+<div id="splash">
+  <svg class="logo" viewBox="0 0 240 240" aria-hidden="true">
+    <g class="lg-rings">
+      <circle cx="146.9" cy="93.1" r="22" />
+      <circle cx="146.9" cy="93.1" r="22" />
+      <circle cx="146.9" cy="93.1" r="22" />
+    </g>
+    <g class="lg-pill"><rect x="41" y="79" width="158" height="82" rx="41" transform="rotate(-45 120 120)" fill="#fff"/></g>
+    <g class="lg-house">
+      <polygon points="124.6,92.4 146.9,72.2 169.2,92.4" fill="#34966d"/>
+      <rect x="130.3" y="88.8" width="33.2" height="27.8" rx="2.5" fill="#34966d"/>
+      <rect x="142.2" y="98.1" width="9.4" height="19" fill="#fff"/>
+    </g>
+  </svg>
+  <div class="t">SafeHouse</div>
+  <div class="m" id="splash-msg">Starting up</div>
+  <div class="loader"><i></i></div>
+</div>
+
+<div id="map"></div>
+
+<button id="search-pill" class="glass press">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+  Where to? Find a safe route
+</button>
+
+<div class="fabs glass" id="fabs">
+  <button class="fab" id="btn-locate" aria-label="My location">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.7 2.3a1 1 0 0 0-1.05-.23l-18 7a1 1 0 0 0 .06 1.89l7.4 2.46 2.46 7.4a1 1 0 0 0 .92.68h.03a1 1 0 0 0 .93-.64l7-18a1 1 0 0 0-.25-1.06z"/></svg>
+  </button>
+  <button class="fab" id="fab-mesh" data-layer="mesh" aria-label="Safety mesh">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="2.2" fill="currentColor"/><circle cx="5" cy="13" r="2.2" fill="currentColor"/><circle cx="19" cy="13" r="2.2" fill="currentColor"/><circle cx="12" cy="20" r="2.2" fill="currentColor"/><path d="M12 5L5 13M12 5l7 8M5 13h14M5 13l7 7M19 13l-7 7"/></svg>
+  </button>
+  <button class="fab" id="fab-light" data-layer="light" aria-label="Street lighting">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 21h6v-1.5H9V21zm3-19a7 7 0 0 0-4 12.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26A7 7 0 0 0 12 2z"/></svg>
+  </button>
+  <button class="fab" id="fab-night" data-layer="night" aria-label="Night mode">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.3 14.6A8.5 8.5 0 0 1 9.4 3.7a.7.7 0 0 0-.9-.9A9.5 9.5 0 1 0 21.2 15.5a.7.7 0 0 0-.9-.9z"/></svg>
+  </button>
+  <button class="fab" id="btn-safety" aria-label="Trusted contact">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V5z"/><circle cx="12" cy="10" r="2.6" fill="currentColor" stroke="none"/><path d="M7.8 16.2c1-1.7 2.5-2.6 4.2-2.6s3.2.9 4.2 2.6" stroke-linecap="round"/></svg>
+  </button>
+</div>
+
+<div id="nav-banner" class="banner in" hidden>
+  <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V5z"/></svg></div>
+  <div class="grow">
+    <div class="bt" id="nb-t">Inside the safety mesh</div>
+    <div class="bs" id="nb-s">SafeHouse point within 150 m</div>
+  </div>
+  <button id="sos">SOS</button>
+</div>
+
+<div id="watch-banner" class="banner in" hidden>
+  <div class="ico" id="wb-initial" style="font-weight:800;font-size:17px">?</div>
+  <div class="grow">
+    <div class="bt" id="wb-t">Following</div>
+    <div class="bs" id="wb-s">Waiting for location…</div>
+  </div>
+  <a class="mini" id="wb-dir" target="_blank" rel="noopener">Directions</a>
+</div>
+
+<div id="toast" class="glass"></div>
+<div id="callout" class="glass" hidden></div>
+
+<div id="sheet" class="glass">
+  <div class="sheet-top" id="sheet-top">
+    <div class="grabber"></div>
+    <div class="seg" id="seg">
+      <span class="thumb" id="seg-thumb"></span>
+      <button data-tab="explore">Explore</button>
+      <button data-tab="ride">Ride</button>
+      <button data-tab="walk">Walk</button>
+      <button data-tab="insights">Insights</button>
+    </div>
+  </div>
+
+  <div class="sheet-body" id="sheet-body">
+
+    <section class="panel" id="panel-explore">
+      <div class="head">
+        <div>
+          <h1>Idle bikes</h1>
+          <div class="sub"><span class="pulse"></span><span id="updated">Loading…</span></div>
+        </div>
+        <div>
+          <div class="big" id="total">–</div>
+          <div class="big-l">parked right now</div>
+        </div>
+      </div>
+      <div class="cards" id="cards"></div>
+
+      <div class="section-title">Map layers</div>
+      <div class="group">
+        <label class="srow">
+          <div class="ic" style="background:#34966d"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="5" r="2" fill="#fff"/><circle cx="5" cy="13" r="2" fill="#fff"/><circle cx="19" cy="13" r="2" fill="#fff"/><circle cx="12" cy="20" r="2" fill="#fff"/><path d="M12 5L5 13M12 5l7 8M5 13h14M5 13l7 7M19 13l-7 7"/></svg></div>
+          <div class="grow"><div class="rt">Safety mesh</div><div class="rs" id="mesh-stats">Building…</div></div>
+          <span class="switch"><input type="checkbox" data-layer="mesh" /><i></i></span>
+        </label>
+        <label class="srow">
+          <div class="ic" style="background:#2c2c2e"><svg viewBox="0 0 24 24" fill="#ffcc00"><path d="M9 21h6v-1.5H9V21zm3-19a7 7 0 0 0-4 12.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26A7 7 0 0 0 12 2z"/></svg></div>
+          <div class="grow"><div class="rt">Street lighting</div><div class="rs" id="light-stats">Lit streets in yellow, unlit in red</div></div>
+          <span class="switch"><input type="checkbox" data-layer="light" /><i></i></span>
+        </label>
+        <label class="srow">
+          <div class="ic" style="background:#5e5ce6"><svg viewBox="0 0 24 24" fill="#fff"><path d="M20.3 14.6A8.5 8.5 0 0 1 9.4 3.7a.7.7 0 0 0-.9-.9A9.5 9.5 0 1 0 21.2 15.5a.7.7 0 0 0-.9-.9z"/></svg></div>
+          <div class="grow"><div class="rt">Night map</div><div class="rs">Turns on automatically after 7pm</div></div>
+          <span class="switch"><input type="checkbox" data-layer="night" /><i></i></span>
+        </label>
+      </div>
+      <div class="src" id="sources"></div>
+    </section>
+
+    <section class="panel" id="panel-ride" hidden>
+      <div class="search-row">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input id="dest-input" type="search" placeholder="Search a place in London" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" />
+          <button class="x-btn" id="dest-x" aria-label="Clear" hidden>×</button>
+        </div>
+        <button class="link-btn" id="ride-cancel" hidden>Cancel</button>
+      </div>
+      <div id="suggest"></div>
+      <div id="ride-idle">
+        <div class="chips" id="place-chips"></div>
+        <div class="hint" id="ride-status">Search, pick a suggestion, or tap the map to drop a destination.</div>
+      </div>
+      <div id="route-list"></div>
+      <div class="sticky-go" id="ride-go-wrap" hidden><button class="btn go" id="ride-go">Start safest route</button></div>
+    </section>
+
+    <section class="panel" id="panel-walk" hidden>
+      <div class="head" style="margin-bottom:8px">
+        <div>
+          <h1>Walk me to a bike</h1>
+          <div class="sub" id="walk-sub">The nearest bike on a well-lit, well-connected path</div>
+        </div>
+      </div>
+      <div class="chips" id="op-chips"></div>
+      <div id="walk-list"></div>
+      <div class="sticky-go" id="walk-go-wrap" hidden><button class="btn go" id="walk-go">Walk me there</button></div>
+    </section>
+
+    <section class="panel" id="panel-insights" hidden>
+      <div class="head" style="margin-bottom:10px">
+        <div>
+          <h1>Pattern to Pavement</h1>
+          <div class="sub" id="ins-sub">Real police reports, turned into action</div>
+        </div>
+      </div>
+      <div class="stats" id="ins-stats"></div>
+      <div class="section-title" id="ins-title">Hotspots</div>
+      <div id="hotspots"></div>
+      <div class="src" id="ins-src"></div>
+    </section>
+
+    <section class="panel" id="panel-nav" hidden>
+      <div class="nav-row">
+        <div>
+          <div class="nav-eta" id="nav-eta">–</div>
+          <div class="nav-meta" id="nav-meta">–</div>
+        </div>
+        <button class="btn danger small" id="nav-end" style="width:auto;padding:0 22px">End</button>
+      </div>
+      <button class="btn" id="nav-share">Share live trip</button>
+      <button class="btn primary" id="nav-arrive" hidden>Open app to unlock</button>
+    </section>
+  </div>
+</div>
+
+<div class="modal" id="modal-safety" hidden>
+  <div class="scrim" data-close></div>
+  <div class="mc glass">
+    <div class="grabber"></div>
+    <h2>Trusted contact</h2>
+    <div class="lead">When you press SOS or share a trip, this person gets a text with a link to your live location. They don't need the app.</div>
+    <div class="field">
+      <label><span>Your name</span><input type="text" id="set-me" placeholder="e.g. Yousef" /></label>
+    </div>
+    <div class="field">
+      <label><span>Contact</span><input type="text" id="set-name" placeholder="e.g. Mum" /></label>
+      <label><span>Mobile</span><input type="tel" id="set-phone" placeholder="07… or +44…" /></label>
+    </div>
+    <button class="btn small" id="set-pick" hidden>Choose from contacts</button>
+    <div class="field" style="margin-top:12px">
+      <label><span style="width:auto;flex:1">Share every trip automatically</span><span class="switch"><input type="checkbox" id="set-auto" /><i></i></span></label>
+    </div>
+    <div class="note">Live location is sent through ntfy.sh on a private, randomly named channel that only your link reveals. Fine for a demo; a real product would use its own encrypted service.</div>
+    <button class="btn primary" id="set-save">Save</button>
+    <button class="btn" id="set-test">Send a test text</button>
+  </div>
+</div>
+
+<div class="modal" id="modal-sos" hidden>
+  <div class="scrim"></div>
+  <div class="mc glass">
+    <div class="grabber"></div>
+    <div class="sos-hero">
+      <div class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V5z"/></svg></div>
+      <div><h2 style="margin:0">SOS activated</h2><div class="sub" id="sos-sub">Nearest SafeHouse points alerted</div></div>
+    </div>
+    <div class="steps">
+      <div class="step"><span class="ck">✓</span><span id="sos-1">Nearest bike point located</span></div>
+      <div class="step"><span class="ck">✓</span><span>Bike lights switched to beacon mode</span></div>
+      <div class="step"><span class="ck">✓</span><span>Bike cameras recording, footage timestamped</span></div>
+      <div class="step"><span class="ck">✓</span><span id="sos-4">Live location sharing started</span></div>
+    </div>
+    <button class="btn primary" id="sos-text">Text your trusted contact</button>
+    <div class="btn-row">
+      <a class="btn small" id="sos-wa" target="_blank" rel="noopener">WhatsApp</a>
+      <a class="btn small danger" href="tel:999">Call 999</a>
+    </div>
+    <button class="btn" id="sos-safe" style="margin-top:8px">I'm safe now</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/deck.gl@9/dist.min.js"></script>
+<script src="safehous.js"></script>
+</body>
+</html>
