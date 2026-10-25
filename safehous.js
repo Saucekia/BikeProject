@@ -15,7 +15,7 @@
 // CONFIG: paste your Google key. Enable: Maps JavaScript, Routes, Geocoding, Places API (New)
 // ============================================================================
 const CONFIG = {
-    GOOGLE_API_KEY: "AIzaSyAFSoTZo0HIqfpHG-F1pnkqd4VpnUSLFYQ",
+    GOOGLE_API_KEY: "API KEY HERE",
     CENTER: { lat: 51.5074, lng: -0.1278 },
     BBOX: { s: 51.28, w: -0.51, n: 51.69, e: 0.33 },
     ZONE1: { s: 51.49, w: -0.19, n: 51.535, e: -0.07 },
